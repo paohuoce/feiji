@@ -1,0 +1,331 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>飞机大战</title>
+    <style>
+
+    </style>
+</head>
+<body>
+
+<script>
+    window.onload = function () {
+        // 全写在一个方法体内，和外界没什么联系，调用就ok了，单例模式
+        //1、在内存里只有一个实例，减少了内存的开销,就一个模块
+        Game.exe ();//exe方法
+    }
+    var Game = {//创建一个大的对象,所有都在这里面实现
+        //启动程序
+        exe : function () {
+            this.init ()//谁调用this指向谁，Game，都是回调
+        }, //初始化
+        init : function () { //写法类似于var init =
+                var This = this;//用来代表Game，方便后面选中模式调用自己
+            //写盒子结构
+            document.body.style.background = "#000";
+            var oDiv = document.createElement ( "div" );
+                    oDiv.id = "GameBox";
+                    oDiv.style.cssText = "width:300px;height:500px;border:10px solid #fff;" +
+                        "margin:50px auto; font-family:'Microsoft yahei';text-align:center; position:relative;  overflow:hidden";//+连接符 background:url('img/bg.jpg') overflow:hidden;
+                    document.body.appendChild ( oDiv );//oDiv.style,这样写的好处调函数即可，不涉及其他部分
+
+            var oH = document.createElement('h1');
+                    oH.innerHTML = '尼古拉斯飞机大战';
+                    oH.style.cssText  = 'color:#fff; font-size:30px; font-weight:nomal; padding-top:50px;';
+                    oDiv.appendChild ( oH ) ;
+
+            for(var i = 0;i<4;i++){
+                    var oP = document.createElement('p');
+                            oP.index = i;//点击事件找到对应
+                            oP.style.cssText='font-size:14px; color:#000;width:150px;height:40px;margin:50px auto; text-align:center; line-height:40px;background:#fff;border-radius:5px;' +
+                                'cursor:pointer;';
+                    var html = '';
+                oP.onmouseenter = function (  ) {
+                    this.style.background = '#f60';
+                    this.style.color = '#fff';
+                }
+                oP.onmouseleave= function (  ) {
+                    this.style.background = '#fff';
+                    this.style.color = '#000';
+                }
+                //再来个点击事件,点击p标签，开始游戏
+                oP.onclick = function ( e ) {
+                    //this.start();//错误，oP，回调用开始函数
+                    //Game.start();
+                    e = e || window.event;//飞机方法需要设置坐标传个e
+                    //console.log(e);
+                    This.start(this.index,oDiv,e);//Game调用，传p标签序列号index
+
+                }
+                //
+                    switch (i){
+                        case 0:
+                                html = '简单难度';
+                            break;
+                        case 1:
+                                html = '中等难度';
+                                break;
+                        case 2:
+                                html = '困难难度';
+                                break;
+                        case 3:
+                                html = '超级赛亚人';
+                                oP.style.color = '#f00';
+                                oP.onmouseenter = function (  ) {
+                                    this.style.background = '#f60';
+                                }
+                                oP.onmouseleave= function (  ) {
+                                    this.style.background = '#fff';//字体颜色就省略不写了，覆盖
+                                }
+                                break;
+                    }
+                    oP.innerHTML = html;
+
+                     oDiv.appendChild ( oP ) ;
+            }
+        },
+        //游戏开始
+        start : function ( index ,oGameBox,e) {
+            oGameBox.innerHTML = '';//点击xx模式清空整个盒子内容,把p干掉
+            //alert(index);//0123slq
+            //来个飞机
+            this.plane(oGameBox,e);//传参给飞机方法接收
+            this.enemy(oGameBox);//敌军
+
+            this.enemy2(oGameBox);//敌军2
+        },
+        //创建飞机
+        plane : function ( oGameBox,e ) {
+            console.log(e);
+            // var oPlane = document.createElement('div');
+            // var oPlane = document.createElement('img');//用什么代替好呢，都可以哈
+            var x = e.pageX;//水平垂直坐标
+            var y=e.pageY;
+            var oPlane = new Image();//js中有专门的图片对象，直接new一个好了
+            oPlane.src ='img/plane.png';
+            oPlane.width = 60;
+            oPlane.height = 36;
+
+            var tY = oGameBox.offsetTop+parseInt(oGameBox.style.borderWidth)+oPlane.height/2;//要减去的宽高
+            var lX = oGameBox.offsetLeft+parseInt(oGameBox.style.borderWidth)+oPlane.width/2;
+
+            window.onresize = function (  ) {
+                lx = oGameBox.offsetLeft+parseInt(oGameBox.style.borderWidth)+oPlane.width/2;
+            };
+            var top = y-tY;
+            var left = x -lX;
+
+            oPlane.style. cssText= 'display:block; position : absolute; top:'+top+'px;left:'+left+'px;';//
+            //PageX鼠标到页面的距离-盒子到自身到页面的距离=相对盒子内部的距离-10边框-自身高度一半宽度一半
+
+            oGameBox.appendChild(oPlane);//把飞机加进去ok
+
+            var leftMin = -oPlane.width/2;//飞机靠左最小的距离是飞机的机翼出去一半
+            var leftMax = oGameBox.clientWidth - oPlane.width/2;//飞机靠左最大的距离=盒子宽度-飞机宽度一半，靠盒子最右边飞机的机翼出去一半
+             var topMin = 0;
+            var topMax = oGameBox.clientHeight - oPlane.height;//最低位置飞机高度最大的距离=盒子高度-飞机高度
+            //飞机跟随鼠标移动，原理和天使一样
+           document.onmousemove = function ( e ) {
+               e = e || window.event;
+               var top = e.pageY-tY;
+               var left =e.pageX -lX;
+               top = Math.min(top,topMax);//如果top大于最大高度（飞机飞到底部的下面），就让他等于（底部）最大高度，取最小值，
+               //if(top>topMax) top=topMax;
+               top = Math.max(top,topMin);//假如top小于最小高度（飞机飞到顶部的外面）（0在顶部），就让他等于最小高度
+               //topMin<top<topMax
+               left = Math.min(left,leftMax);
+               left = Math.max(left,leftMin);
+
+               oPlane.style.left = left +'px';
+               oPlane.style.top = top + 'px';
+           };
+           this.biubiubiu(oPlane,oGameBox);//调用
+        },
+        //发射子弹
+        biubiubiu: function ( oPlane ,oGameBox) {
+            // console.log(oGameBox);
+            var timer = setInterval(function (  ) {
+                // alert(1)
+                    var oBiu = new Image();//每个0.1秒产生一张子弹图片
+                          oBiu.src = 'img/bullet.png';
+                          oBiu.width=6;
+                          oBiu.height=22;
+                          oBiu.className="biubiubiu";
+                          //子弹的位置
+                var top = oPlane.offsetTop - oBiu.height;
+                var left = oPlane.offsetLeft + oPlane.width/2 - oBiu.width/2;
+                          oBiu.style.cssText='position:absolute; top:'+top+'px;left:'+left+'px;';
+                oGameBox.appendChild(oBiu);
+                oBiu.timer = setInterval(function (  ) {
+                        oBiu.style.top = oBiu.offsetTop - 5+'px';//实现子弹发射,子弹往上跑效果，
+                    // ps:让每张图片距离顶部每隔13毫秒-3px的高度，同时图片每隔0.1秒会生成一张
+                    //问题：1.飞机移动比子弹快时，子弹在飞机后面，2.元素一直在页面子弹过多在页面会卡，看起来子弹会连起来
+                            if(oBiu.offsetTop < - oBiu.height){//当子弹飞出去了
+                                clearInterval(oBiu.timer);
+                                oBiu.parentNode.removeChild(oBiu);//移除掉
+                            }
+
+                },13);//子弹，移动速度
+            },100);//子弹，生成速度
+
+        },
+        //敌军
+        enemy : function ( oGameBox ) {
+            var timer = setInterval(function (  ) {//生成敌军定时器
+                var oEnemy = new Image();
+                oEnemy.className = "eimg";
+
+                oEnemy.src="img/enemy.png";
+                oEnemy.width=22;
+                oEnemy.height=22;//30
+
+                //var lMin  = -oEnemy.width/2;//测试
+                var lMin  = 0;//出现的位置
+                var lMax = oGameBox.clientWidth-oEnemy.width;
+                var left = Math.random() * (lMax-lMin)+lMin;//（范围=最大值-最小值）+最小值
+
+                oEnemy.style.cssText='position:absolute;top:'+(- oEnemy.height)+'px; left:'+left+'px;  ';//'和"
+                oGameBox.appendChild(oEnemy);
+                //敌军下降速度
+                var a = Math.random()*2+1;//每个敌军下降速度不同，来个随机，+1，速度不能为0停在那里
+                oEnemy.timer = setInterval(function (  ) {//下降速度定时器
+                    //var a = Math.random()*4;//每次运动敌军速度，顿erro
+                    oEnemy.style.top=oEnemy.offsetTop+a+'px';//1-3区间速度稳定
+
+                    //边界检测
+                    if( oEnemy.offsetTop >= oGameBox.clientHight ){
+                        clearInterval(oEnemy.timer);
+                        oEnemy.parentNode.removeChild(oEnemy);
+                    }
+
+                },13);//画面最低刷新13
+
+                //敌军和子弹碰撞
+                var allBiu = Game.getClass('biubiubiu');
+                // var bLength = allBiu.length;
+                // var isZhuang = true;
+                oEnemy.pzTimer = setInterval(function (  ) {
+                    for(var i = 0;i<allBiu.length;i++){
+                           // console.log(Game.boom(oEnemy,allBiu[i]));
+                        if(Game.boom(oEnemy,allBiu[i])){
+                            // oEnemy.src = 'img/boom.png';
+                            oEnemy.src = 'img/boom.png';
+                            setTimeout(function (  ) {
+                           oEnemy.parentNode.removeChild(oEnemy) ;
+                            },500);//爆炸后0.5s消失
+
+                        }
+                    }
+                },50);//隔50毫秒检测有没有碰撞
+
+            },500);//敌军生成来速度
+        },
+        //敌军2
+        enemy2 : function ( oGameBox ) {
+            var timer = setInterval(function (  ) {
+                var oEnemy = new Image();
+                oEnemy.className = "eimg";
+
+                oEnemy.src="img/goutou2.png";
+                oEnemy.width=22;
+                oEnemy.height=22;//30
+
+                var lMin  = 0;//出现的位置
+                var lMax = oGameBox.clientWidth-oEnemy.width;
+                var left = Math.random() * (lMax-lMin)+lMin;
+
+                oEnemy.style.cssText='position:absolute;top:'+(- oEnemy.height)+'px; left:'+left+'px;  ';//'和"
+                oGameBox.appendChild(oEnemy);
+
+                var a = Math.random()*2+1;
+                oEnemy.timer = setInterval(function (  ) {
+                    oEnemy.style.top=oEnemy.offsetTop+a+'px';
+                    //边界检测
+                    if( oEnemy.offsetTop >= oGameBox.clientHight ){
+                        clearInterval(oEnemy.timer);
+                        oEnemy.parentNode.removeChild(oEnemy);
+                    }
+                },13);
+                //敌军和子弹碰撞
+                var allBiu = Game.getClass('biubiubiu');
+                oEnemy.pzTimer = setInterval(function (  ) {
+                    for(var i = 0;i<allBiu.length;i++){
+                        if(Game.boom(oEnemy,allBiu[i])){
+                            oEnemy.src = 'img/boom.png';
+                            oEnemy.width=15;
+                            oEnemy.height=15;
+                            setTimeout(function (  ) {
+                                oEnemy.parentNode.removeChild(oEnemy) ;
+                            },500);//爆炸后0.5s消失
+                        }
+                    }
+                },50);//隔50毫秒检测有没有碰撞
+
+            },400);//敌军生成来速度
+        },
+        //碰撞检测，爆炸
+        /* 传参 敌机，每个子弹all[i]//或者每个敌军和一个子弹检测
+        1.判断四种情况之内，返回false,没撞上
+         2.除了四种情况，返回ture,撞上了
+        * */
+        boom: function ( obj1,obj2 ) {
+            var T1 = obj1.offsetTop;//顶部
+            var B1 =T1+obj1.clientHeight;//底部=顶部+自身高度
+            var L1 = obj1.offsetLeft;
+            var R1 = L1+obj1.clientWidth;
+        //盒子2
+            var T2 = obj2.offsetTop;
+            var B2 =T2+obj2.clientHeight;
+            var L2 = obj2.offsetLeft;//左边
+            var R2 = L2+obj2.clientWidth;//右边
+
+        if( R2 < L1  || L2>R1 || B2 < T1 || T2 > B1 ){
+           // return "没撞上";
+            return false;
+        }else{
+            // return "撞上了";
+            return true;
+        }
+    },
+        //getClass方法
+        getClass: function ( cName,parent ) {
+            parent = parent || document;
+            if(document.getElementsByClassName(cName)){
+                return document.getElementsByClassName(cName);
+              }else{
+                var all = parent.getElementsByTagName('*');
+                 var arr=[];
+                   for(var i = 0;i<all.length;i++){
+                      var arrClass = all.className.split(' ');
+                         for(var j= 0;j<arrClass.length;j++){
+                          if(arrClass[j] == cName){
+                                   arr.push(all[i]);
+                                         break;
+                        }
+                    }
+                }
+                return arr;
+            }
+            
+        },
+        //游戏结束
+        
+    }//完
+</script>
+<style type="text/css">
+    .eimg{
+        -webkit-animation:run 8s linear 0s infinite;
+    }
+    @-webkit-keyframes run{
+        from{
+            -webkit-transform:rotate(0deg);
+        }
+        to{
+            -webkit-transform:rotate(360deg);
+        }
+    }
+
+</style>
+</body>
+</html>

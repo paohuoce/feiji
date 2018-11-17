@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+
+    </style>
+</head>
+<body>
+<form id="userForm" method="post">
+用户名：<input type="text" name="username" id="username">
+密码：<input type="text" name="password" id="password">
+<input type="submit" value="登录" id="btn">
+</form>
+
+<script>
+document.getElementById('btn').click = function () {
+    var xhr = new XMLHttpRequest();
+    xhr.open('post','http://localhost/user/check');
+    xhr.setRequestHeader('Content-type','application/x-www-form-urlencoded');
+    xhr.send();
+    xhr.onload = function (  ) {
+        var flag =json.parse(xhr.responseText);
+
+        if(flag=1){
+            location ="http://localhost/user/success";
+        }else{
+            location ="http://localhost/user/failure";
+        }
+    }
+}
+</script>
+</body>
+</html>
